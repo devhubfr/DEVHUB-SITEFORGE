@@ -1,0 +1,648 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DevHub AI Lab — Developer Toolbox</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0d1a;--bg2:#050710;--panel:#121833;--panel2:#0d1226;--line:#2c355c;--line-lit:#4a5590;
+  --text:#eef1fb;--muted:#8b93b8;--pink:#ff8fc9;--blue:#7ad9ff;--purple:#ab93ff;--ok:#7dffb0;--bad:#ff6b81;--warn:#ffd873;
+  --pixel:'Press Start 2P',monospace;--body:'Space Grotesk',Arial,sans-serif;--mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:var(--body);color:var(--text);background:var(--bg)}
+body{
+  background-image:
+    linear-gradient(rgba(122,217,255,.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(122,217,255,.05) 1px,transparent 1px),
+    radial-gradient(circle at 85% -10%,#ab93ff30,transparent 40%),
+    radial-gradient(circle at 0% 100%,#ff8fc924,transparent 45%);
+  background-size:34px 34px,34px 34px,auto,auto;
+}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+h1,h2,h3{margin:0;font-family:var(--body)}
+::selection{background:var(--pink);color:#1a0d16}
+
+/* ---- window / pixel-corner card system ---- */
+.win{position:relative;background:linear-gradient(180deg,var(--panel),var(--panel2));border:2px solid var(--line);}
+.win:before,.win:after,.win .c2:before,.win .c2:after{content:"";position:absolute;width:7px;height:7px;border:2px solid var(--blue)}
+.win:before{top:-2px;left:-2px;border-right:0;border-bottom:0}
+.win:after{top:-2px;right:-2px;border-left:0;border-bottom:0}
+.win .c2:before{bottom:-2px;left:-2px;border-right:0;border-top:0;position:absolute}
+.win .c2:after{bottom:-2px;right:-2px;border-left:0;border-top:0;position:absolute}
+.titlebar{display:flex;align-items:center;gap:9px;padding:9px 12px;background:var(--panel2);border-bottom:2px solid var(--line);font-family:var(--pixel);font-size:9px;letter-spacing:.5px;color:var(--blue)}
+.titlebar .dots{display:flex;gap:5px;margin-left:auto}
+.titlebar .dots i{width:7px;height:7px;background:var(--line-lit);display:block}
+.winbody{padding:20px}
+
+/* ---- layout ---- */
+.app{min-height:100vh;display:flex}
+.dock{position:fixed;inset:0 auto 0 0;width:78px;background:var(--bg2);border-right:2px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:16px 0;z-index:20;gap:4px}
+.dock .brand{width:46px;height:46px;border-radius:12px;border:2px solid var(--pink);margin-bottom:14px;flex:none;display:flex;align-items:center;justify-content:center;font-family:var(--pixel);font-size:11px;color:var(--pink);background:#ff8fc914}
+.dock button{width:52px;height:52px;background:transparent;border:2px solid transparent;border-radius:10px;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:18px}
+.dock button span{font-family:var(--body);font-size:8px;color:var(--muted)}
+.dock button:hover{border-color:var(--line-lit);color:var(--text)}
+.dock button.active{border-color:var(--pink);color:var(--pink);background:#ff8fc914}
+.dock button.active span{color:var(--pink)}
+.dock .clock{margin-top:auto;font-family:var(--mono);font-size:10px;color:var(--blue);text-align:center;line-height:1.4;padding-top:10px;border-top:1px solid var(--line);width:56px}
+
+main{margin-left:78px;width:calc(100% - 78px);padding:26px 30px 100px;max-width:1400px}
+.topbar{display:flex;justify-content:space-between;align-items:flex-end;gap:15px;margin-bottom:20px;flex-wrap:wrap}
+.topbar h1{font-family:var(--pixel);font-size:16px;line-height:1.6;color:var(--text)}
+.topbar p{color:var(--muted);margin:8px 0 0;max-width:520px;font-size:14px}
+.eyebrow{font-family:var(--mono);font-size:11px;color:var(--pink)}
+
+.btn{border:2px solid var(--line);background:var(--panel);padding:10px 15px;border-radius:8px;font-weight:600;font-size:13px}
+.btn:hover{border-color:var(--line-lit)}
+.btn.primary{background:linear-gradient(135deg,var(--pink),var(--purple));border-color:transparent;color:#160a1c;font-weight:700}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent;border-color:var(--line)}
+
+.hidden{display:none!important}
+.section{display:flex;flex-direction:column;gap:18px}
+
+/* home */
+.hero{display:flex;gap:22px;align-items:stretch;flex-wrap:wrap}
+.hero .win{flex:1 1 420px}
+.hero .player{width:230px;flex:none}
+.hero .player .winbody{padding:16px;display:flex;flex-direction:column;justify-content:center;gap:10px;min-height:100%}
+.playerbar{display:flex;gap:8px;align-items:center;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.playerbar .bar{flex:1;height:6px;background:var(--bg2);border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.playerbar .bar i{display:block;height:100%;width:38%;background:var(--pink)}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.stat-card .winbody{padding:16px}
+.stat-num{font-family:var(--pixel);font-size:20px;margin-top:10px;color:var(--blue)}
+
+.launchgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.launch{cursor:pointer;text-align:center;padding:16px 10px}
+.launch .ico{font-size:24px}
+.launch h4{font-size:12.5px;margin:9px 0 4px;font-weight:600}
+.launch p{font-size:11px;color:var(--muted);margin:0}
+.launch:hover{border-color:var(--pink)}
+
+/* generic workspace grid used across tools */
+.workspace{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.field{margin:0 0 14px}
+.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-family:var(--mono)}
+.field input,.field textarea,.field select{width:100%;background:var(--bg2);color:var(--text);border:2px solid var(--line);border-radius:7px;padding:10px 11px;outline:none}
+.field textarea{min-height:210px;resize:vertical;font-family:var(--mono);font-size:13px}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--pink)}
+.output{background:var(--bg2);border:2px solid var(--line);border-radius:8px;padding:14px;min-height:210px;white-space:pre-wrap;overflow:auto;font-family:var(--mono);font-size:13px;color:#c9d1ee;line-height:1.55}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.notice{padding:10px 12px;border-radius:7px;background:#0d1226;border:1px solid var(--line);color:var(--muted);font-size:12.5px;margin-top:10px}
+.success{color:var(--ok)}.bad{color:var(--bad)}
+.chiprow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.chip{border:1px solid var(--line);padding:5px 10px;border-radius:99px;font-size:11px;color:var(--muted);font-family:var(--mono)}
+
+.palette{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-top:14px}
+.swatch{height:70px;border-radius:7px;border:1px solid #ffffff22;display:flex;align-items:flex-end;padding:6px;font-size:10px;font-family:var(--mono);color:#0007;text-shadow:0 1px 0 #fff8}
+
+.checks{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.checks label{padding:9px 11px;background:var(--bg2);border:1px solid var(--line);border-radius:7px;color:var(--muted);font-size:13px;display:flex;align-items:center;gap:8px}
+
+.history{display:flex;flex-direction:column;gap:9px}
+.item{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg2);border:1px solid var(--line);padding:12px 14px;border-radius:8px}
+.item .muted{font-size:11.5px;font-family:var(--mono)}
+.search{width:260px;padding:9px 12px;background:var(--bg2);color:var(--text);border:2px solid var(--line);border-radius:7px}
+
+.tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.tabs button{border:2px solid var(--line);background:var(--panel);padding:8px 13px;border-radius:7px;font-size:12.5px;color:var(--muted)}
+.tabs button.active{border-color:var(--pink);color:var(--pink);background:#ff8fc914}
+
+.assistant{position:fixed;right:22px;bottom:22px;z-index:30;display:flex;align-items:flex-end;gap:10px}
+.assistant .bulle{max-width:210px;background:var(--panel);border:2px solid var(--line);border-radius:10px 10px 2px 10px;padding:10px 12px;font-size:12px;color:var(--text);font-family:var(--mono)}
+.assistant-btn{width:52px;height:52px;border-radius:50%;border:2px solid var(--pink);background:var(--panel);color:var(--pink);font-family:var(--pixel);font-size:16px;cursor:pointer;box-shadow:0 6px 20px #000a}
+.assistant-btn:hover{background:#ff8fc914}
+
+.mobiletop{display:none}
+
+@media(max-width:980px){
+  .dock{width:64px}.dock button{width:44px;height:44px;font-size:15px}.dock button span{display:none}
+  main{margin-left:64px;width:calc(100% - 64px);padding:20px}
+  .workspace{grid-template-columns:1fr}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .hero{flex-direction:column}.hero .player{width:100%}
+}
+@media(max-width:640px){
+  .stats{grid-template-columns:1fr 1fr}
+  .search{width:100%}
+  .checks{grid-template-columns:1fr}
+  .assistant .bulle{display:none}
+  .launchgrid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<nav class="dock" id="dock">
+  <div class="brand">DH</div>
+  <button class="active" data-go="home" onclick="go('home',this)">⌂<span>Bureau</span></button>
+  <button data-go="code" onclick="go('code',this)">⌨<span>Code</span></button>
+  <button data-go="cmd" onclick="go('cmd',this)">&gt;_<span>Cmds</span></button>
+  <button data-go="project" onclick="go('project',this)">📦<span>Projet</span></button>
+  <button data-go="readme" onclick="go('readme',this)">📝<span>README</span></button>
+  <button data-go="config" onclick="go('config',this)">⚙<span>Config</span></button>
+  <button data-go="ui" onclick="go('ui',this)">◈<span>UI</span></button>
+  <button data-go="json" onclick="go('json',this)">{ }<span>JSON</span></button>
+  <button data-go="bugs" onclick="go('bugs',this)">🐞<span>Bugs</span></button>
+  <button data-go="testdata" onclick="go('testdata',this)">🧪<span>Data</span></button>
+  <button data-go="history" onclick="go('history',this)">↺<span>Histo</span></button>
+  <div class="clock" id="clock">00:00:00</div>
+</nav>
+
+<main>
+
+<!-- ============ HOME ============ -->
+<section id="home" class="section">
+  <div class="hero">
+    <div class="win">
+      <div class="titlebar">DEVHUB://BUREAU<div class="dots"><i></i><i></i><i></i></div></div>
+      <div class="winbody">
+        <div class="eyebrow">Developer Toolbox — sans API, 100% local</div>
+        <h1 style="font-family:var(--pixel);font-size:18px;line-height:1.7;margin:10px 0">DevHub AI Lab</h1>
+        <p style="color:var(--muted);max-width:520px;line-height:1.6">Un vrai atelier pour développeurs&nbsp;: génère du code, des commandes, des structures de projet, des README, des configs, des palettes, du JSON, des données de test — et débogue tes journées avec le simulateur de bugs. Tout tourne dans ton navigateur, rien ne part sur un serveur.</p>
+        <div class="actions"><button class="btn primary" onclick="go('code',dockBtn('code'))">Ouvrir le Code Lab</button><button class="btn ghost" onclick="go('project',dockBtn('project'))">Créer un projet</button></div>
+      </div>
+      <div class="c2"></div>
+    </div>
+    <div class="win player">
+      <div class="titlebar">STATUS<div class="dots"><i></i><i></i><i></i></div></div>
+      <div class="winbody">
+        <div class="notice" style="margin-top:0;text-align:center" id="mascotteLine">« Prêt à générer un truc cool ? »</div>
+        <div class="playerbar" style="margin-top:12px">▶ <div class="bar"><i></i></div> live</div>
+      </div>
+      <div class="c2"></div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="win stat-card"><div class="winbody"><span class="muted">Outils</span><div class="stat-num">11</div></div><div class="c2"></div></div>
+    <div class="win stat-card"><div class="winbody"><span class="muted">Générations</span><div class="stat-num" id="count">0</div></div><div class="c2"></div></div>
+    <div class="win stat-card"><div class="winbody"><span class="muted">Sauvegardes</span><div class="stat-num" id="saved">0</div></div><div class="c2"></div></div>
+    <div class="win stat-card"><div class="winbody"><span class="muted">Appels API</span><div class="stat-num" style="color:var(--ok)">0</div></div><div class="c2"></div></div>
+  </div>
+
+  <div class="win">
+    <div class="titlebar">RACCOURCIS<div class="dots"><i></i><i></i><i></i></div></div>
+    <div class="winbody">
+      <div class="launchgrid">
+        <div class="win launch" onclick="go('code',dockBtn('code'))"><div class="ico">⌨</div><h4>Code &amp; Snippets</h4><p>Web, Python, Lua, Node</p><div class="c2"></div></div>
+        <div class="win launch" onclick="go('cmd',dockBtn('cmd'))"><div class="ico">&gt;_</div><h4>Commandes</h4><p>npm, git, docker...</p><div class="c2"></div></div>
+        <div class="win launch" onclick="go('project',dockBtn('project'))"><div class="ico">📦</div><h4>Structure projet</h4><p>Arborescence prête</p><div class="c2"></div></div>
+        <div class="win launch" onclick="go('readme',dockBtn('readme'))"><div class="ico">📝</div><h4>README</h4><p>Doc pro en 1 clic</p><div class="c2"></div></div>
+        <div class="win launch" onclick="go('config',dockBtn('config'))"><div class="ico">⚙</div><h4>Configs</h4><p>.env / .gitignore</p><div class="c2"></div></div>
+        <div class="win launch" onclick="go('ui',dockBtn('ui'))"><div class="ico">◈</div><h4>UI &amp; Palettes</h4><p>Thèmes CSS complets</p><div class="c2"></div></div>
+        <div class="win launch" onclick="go('json',dockBtn('json'))"><div class="ico">{ }</div><h4>JSON Lab</h4><p>Format, minify, valide</p><div class="c2"></div></div>
+        <div class="win launch" onclick="go('bugs',dockBtn('bugs'))"><div class="ico">🐞</div><h4>Simulateur de bugs</h4><p>Pour rire (ou pleurer)</p><div class="c2"></div></div>
+        <div class="win launch" onclick="go('testdata',dockBtn('testdata'))"><div class="ico">🧪</div><h4>Données de test</h4><p>JSON / CSV fictifs</p><div class="c2"></div></div>
+      </div>
+    </div>
+    <div class="c2"></div>
+  </div>
+</section>
+
+<!-- ============ CODE & SNIPPETS ============ -->
+<section id="code" class="section hidden">
+  <div class="topbar"><div><div class="eyebrow">Outil 01</div><h1>Code &amp; Snippets</h1><p>Décris ce que tu veux, choisis la plateforme.</p></div></div>
+  <div class="win"><div class="titlebar">PARAMÈTRES<div class="dots"><i></i><i></i><i></i></div></div>
+  <div class="winbody">
+    <div class="tabs" id="codeTabs">
+      <button class="active" data-p="web" onclick="setPlatform('web',this)">🌐 Web</button>
+      <button data-p="python" onclick="setPlatform('python',this)">🐍 Python</button>
+      <button data-p="roblox" onclick="setPlatform('roblox',this)">🎮 Roblox / Lua</button>
+      <button data-p="discord" onclick="setPlatform('discord',this)">💬 Discord.js</button>
+      <button data-p="node" onclick="setPlatform('node',this)">🟩 Node / JS</button>
+    </div>
+  </div><div class="c2"></div></div>
+  <div class="workspace">
+    <div class="win"><div class="titlebar">DEMANDE<div class="dots"><i></i><i></i><i></i></div></div>
+      <div class="winbody">
+        <div class="field"><label>Ce que tu veux générer</label><textarea id="codePrompt" placeholder="Ex : un bouton animé, une carte responsive, un événement de connexion, une fonction de tri..."></textarea></div>
+        <div class="notice" id="codeHint">Décris précisément ce que tu veux.</div>
+        <div class="actions"><button class="btn primary" onclick="genCode()">Générer</button><button class="btn ghost" onclick="$('codePrompt').value='';$('codeOut').textContent='Ton code apparaîtra ici.'">Effacer</button></div>
+      </div><div class="c2"></div></div>
+    <div class="win"><div class="titlebar">RÉSULTAT<div class="dots"><i></i><i></i><i></i></div></div>
+      <div class="winbody">
+        <div id="codeOut" class="output">Ton code apparaîtra ici.</div>
+        <div class="actions"><button class="btn ghost" onclick="copy('codeOut')">Copier</button><button class="btn ghost" onclick="saveCurrent('code',$('codePrompt').value,$('codeOut').textContent)">Sauvegarder</button></div>
+      </div><div class="c2"></div></div>
+  </div>
+</section>
+
+<!-- ============ COMMANDES ============ -->
+<section id="cmd" class="section hidden">
+  <div class="topbar"><div><div class="eyebrow">Outil 02</div><h1>Générateur de commandes</h1><p>Tape ce que tu veux faire, récupère la ligne de commande.</p></div></div>
+  <div class="workspace">
+    <div class="win"><div class="titlebar">BESOIN<div class="dots"><i></i><i></i><i></i></div></div>
+      <div class="winbody">
+        <div class="field"><label>Décris l'action</label><textarea id="cmdPrompt" placeholder="Ex : initialiser un dépôt git, installer les dépendances, lancer un serveur Python, builder un conteneur Docker..."></textarea></div>
+        <div class="actions"><button class="btn primary" onclick="genCmd()">Générer</button></div>
+      </div><div class="c2"></div></div>
+    <div class="win"><div class="titlebar">TERMINAL<div class="dots"><i></i><i></i><i></i></div></div>
+      <div class="winbody">
+        <div id="cmdOut" class="output">$ en attente de commande...</div>
+        <div class="actions"><button class="btn ghost" onclick="copy('cmdOut')">Copier</button><button class="btn ghost" onclick="saveCurrent('cmd',$('cmdPrompt').value,$('cmdOut').textContent)">Sauvegarder</button></div>
+      </div><div class="c2"></div></div>
+  </div>
+</section>
+
+<!-- ============ PROJET ============ -->
+<section id="project" class="section hidden">
+  <div class="topbar"><div><div class="eyebrow">Outil 03</div><h1>Structure de projet</h1><p>Une arborescence de fichiers prête à créer.</p></div></div>
+  <div class="workspace">
+    <div class="win"><div class="titlebar">PARAMÈTRES<div class="dots"><i></i><i></i><i></i></div></div>
+      <div class="winbody">
+        <div class="field"><label>Nom du projet</label><input id="projName" placeholder="mon-projet"></div>
+        <div class="field"><label>Type de projet</label><select id="projType" onchange="hintProj()">
+          <option value="site">Site vitrine (HTML/CSS/JS)</option>
+          <option value="webapp">Application web</option>
+          <option value="discordbot">Bot Discord (Node.js)</option>
+          <option value="pyscript">Script / outil Python</option>
+          <option value="robloxgame">Jeu Roblox</option>
+        </select></div>
+        <div class="notice" id="projHint">Choisis un type de projet.</div>
+        <div class="actions"><button class="btn primary" onclick="genProject()">Générer l'arborescence</button></div>
+      </div><div class="c2"></div></div>
+    <div class="win"><div class="titlebar">ARBORESCENCE<div class="dots"><i></i><i></i><i></i></div></div>
+      <div class="winbody">
+        <div id="projOut" class="output">Ton arborescence apparaîtra ici.</div>
+        <div class="actions"><button class="btn ghost" onclick="copy('projOut')">Copier</button><button class="btn ghost" onclick="saveCurrent('project',$('projName').value,$('projOut').textContent)">Sauvegarder</button></div>
+      </div><div class="c2"></div></div>
+  </div>
+</section>
+
+<!-- ============ README ============ -->
+<section id="readme" class="section hidden">
+  <div class="topbar"><div><div class="eyebrow">Outil 04</div><h1>Générateur de README</h1><p>Une documentation propre à partir de quelques infos.</p></div></div>
+  <div class="workspace">
+    <div class="win"><div class="titlebar">INFOS PROJET<div class="dots"><i></i><i></i><i></i></div></div>
+      <div class="winbody">
+        <div class="field"><label>Nom du projet</label><input id="rmName" placeholder="DevHub Tools"></div>
+        <div class="field"><label>Description courte</label><input id="rmDesc" placeholder="Une toolbox de développeur tout-en-un"></div>
+        <div class="field"><label>Technologies (séparées par des virgules)</label><input id="rmTech" placeholder="HTML, CSS, JavaScript"></div>
+        <div class="actions"><button class="btn primary" onclick="genReadme()">Générer le README</button></div>
+      </div><div class="c2"></div></div>
+    <div class="win"><div class="titlebar">README.MD<div class="dots"><i></i><i></i><i></i></div></div>
+      <div class="winbody">
+        <div id="rmOut" class="output">Ton README apparaîtra ici.</div>
+        <div class="actions"><button class="btn ghost" onclick="copy('rmOut')">Copier</button><button class="btn ghost" onclick="saveCurrent('readme',$('rmName').value,$('rmOut').textContent)">Sauvegarder</button></div>
+      </div><div class="c2"></div></div>
+  </div>
+</section>
+
+<!-- ============ CONFIG ============ -->
+<section id="config" class="section hidden">
+  <div class="topbar"><div><div class="eyebrow">Outil 05</div><h1>Générateur de configs</h1><p>Fichiers .gitignore et .env prêts à l'emploi.</p></div></div>
+  <div class="workspace">
+    <div class="win"><div class="titlebar">.GITIGNORE<div class="dots"><i></i><i></i><i></i></div></div>
+      <div class="winbody">
+        <div class="field"><label>Stack</label><select id="giStack" onchange="genGitignore()">
+          <option value="node">Node.js</option><option value="python">Python</option><option value="unity">Unity / Roblox</option><option value="general">Général</option>
+        </select></div>
+        <div id="giOut" class="output">Choisis une stack.</div>
+        <div class="actions"><button class="btn ghost" onclick="copy('giOut')">Copier</button></div>
+      </div><div class="c2"></div></div>
+    <div class="win"><div class="titlebar">.ENV<div class="dots"><i></i><i></i><i></i></div></div>
+      <div class="winbody">
+        <div class="field"><label>Nom de l'app</label><input id="envName" placeholder="MonApp" oninput="genEnv()"></div>
+        <div class="field"><label>Variables (séparées par des virgules)</label><input id="envVars" placeholder="PORT, DATABASE_URL, TOKEN" oninput="genEnv()"></div>
+        <div id="envOut" class="output">Renseigne les champs ci-dessus.</div>
+        <div class="actions"><button class="btn ghost" onclick="copy('envOut')">Copier</button></div>
+      </div><div class="c2"></div></div>
+  </div>
+</section>
+
+<!-- ============ UI / PALETTES ============ -->
+<section id="ui" class="section hidden">
+  <div class="topbar"><div><div class="eyebrow">Outil 06</div><h1>UI &amp; Palettes</h1><p>Une base de variables CSS cohérente, selon un style.</p></div></div>
+  <div class="workspace">
+    <div class="win"><div class="titlebar">PARAMÈTRES<div class="dots"><i></i><i></i><i></i></div></div>
+      <div class="winbody">
+        <div class="field"><label>Couleur principale</label><input id="base" type="color" value="#ff8fc9"></div>
+        <div class="field"><label>Style</label><select id="style">
+          <option value="dark">Dark Premium</option><option value="pastel">Pastel Y2K</option><option value="neon">Gaming Néon</option><option value="mini">Minimaliste</option>
+        </select></div>
+        <div class="field"><label>Rayon des composants</label><select id="radius"><option value="4px">Petit (rétro)</option><option value="12px" selected>Moyen</option><option value="20px">Grand</option></select></div>
+        <button class="btn primary" onclick="makeUI()">Générer le thème</button>
+      </div><div class="c2"></div></div>
+    <div class="win"><div class="titlebar">THEME.CSS<div class="dots"><i></i><i></i><i></i></div></div>
+      <div class="winbody">
+        <div id="uiOut" class="output">Clique sur « Générer le thème ».</div>
+        <div class="palette" id="palette"></div>
+        <div class="actions"><button class="btn ghost" onclick="copy('uiOut')">Copier</button></div>
+      </div><div class="c2"></div></div>
+  </div>
+</section>
+
+<!-- ============ JSON LAB ============ -->
+<section id="json" class="section hidden">
+  <div class="topbar"><div><div class="eyebrow">Outil 07</div><h1>JSON Lab</h1><p>Formatte, minifie et valide ton JSON sans dépendance.</p></div></div>
+  <div class="workspace">
+    <div class="win"><div class="titlebar">ENTRÉE<div class="dots"><i></i><i></i><i></i></div></div>
+      <div class="winbody">
+        <div class="field"><label>JSON</label><textarea id="jsonIn" placeholder='{"name":"DevHub","version":1,"active":true}'></textarea></div>
+        <div class="actions"><button class="btn primary" onclick="jsonFormat()">Formatter</button><button class="btn ghost" onclick="jsonMini()">Minifier</button><button class="btn ghost" onclick="jsonValidate()">Valider</button></div>
+      </div><div class="c2"></div></div>
+    <div class="win"><div class="titlebar">SORTIE<div class="dots"><i></i><i></i><i></i></div></div>
+      <div class="winbody">
+        <div id="jsonOut" class="output">Résultat...</div>
+        <div class="actions"><button class="btn ghost" onclick="copy('jsonOut')">Copier</button></div>
+      </div><div class="c2"></div></div>
+  </div>
+</section>
+
+<!-- ============ SIMULATEUR DE BUGS ============ -->
+<section id="bugs" class="section hidden">
+  <div class="topbar"><div><div class="eyebrow">Outil 08 — pour rire</div><h1>Simulateur de bugs</h1><p>Un faux message d'erreur crédible (et une excuse de stand-up) pour décorer tes captures d'écran ou détendre l'équipe. Rien de réel, rien à exécuter.</p></div></div>
+  <div class="workspace">
+    <div class="win"><div class="titlebar">CONTEXTE<div class="dots"><i></i><i></i><i></i></div></div>
+      <div class="winbody">
+        <div class="field"><label>Langage / environnement</label><select id="bugLang">
+          <option value="js">JavaScript</option><option value="python">Python</option><option value="lua">Lua / Roblox</option><option value="css">CSS</option><option value="git">Git</option>
+        </select></div>
+        <button class="btn primary" onclick="genBug()">Simuler un bug</button>
+        <div class="notice">Génère un message d'erreur factice avec une excuse aléatoire — purement décoratif.</div>
+      </div><div class="c2"></div></div>
+    <div class="win"><div class="titlebar">CONSOLE<div class="dots"><i></i><i></i><i></i></div></div>
+      <div class="winbody">
+        <div id="bugOut" class="output bad">En attente d'un désastre...</div>
+        <div class="actions"><button class="btn ghost" onclick="copy('bugOut')">Copier</button></div>
+      </div><div class="c2"></div></div>
+  </div>
+</section>
+
+<!-- ============ TEST DATA ============ -->
+<section id="testdata" class="section hidden">
+  <div class="topbar"><div><div class="eyebrow">Outil 09</div><h1>Données de test</h1><p>Des données fictives pour peupler tes interfaces.</p></div></div>
+  <div class="win"><div class="titlebar">SÉLECTION<div class="dots"><i></i><i></i><i></i></div></div>
+    <div class="winbody">
+      <div class="checks">
+        <label><input type="checkbox" id="tUser" checked> Utilisateurs</label>
+        <label><input type="checkbox" id="tProducts" checked> Produits</label>
+        <label><input type="checkbox" id="tOrders"> Commandes</label>
+        <label><input type="checkbox" id="tStats"> Statistiques</label>
+      </div>
+      <div class="field" style="margin-top:14px"><label>Format</label><select id="tFormat"><option value="json">JSON</option><option value="csv">CSV (utilisateurs)</option></select></div>
+      <div class="actions"><button class="btn primary" onclick="testData()">Générer</button></div>
+    </div><div class="c2"></div></div>
+  <div class="win"><div class="titlebar">RÉSULTAT<div class="dots"><i></i><i></i><i></i></div></div>
+    <div class="winbody">
+      <div id="testOut" class="output">Choisis les données puis génère.</div>
+      <div class="actions"><button class="btn ghost" onclick="copy('testOut')">Copier</button></div>
+    </div><div class="c2"></div></div>
+</section>
+
+<!-- ============ HISTORIQUE ============ -->
+<section id="history" class="section hidden">
+  <div class="topbar"><div><div class="eyebrow">Outil 10</div><h1>Historique</h1><p>Tes sauvegardes restent sur cet appareil (localStorage).</p></div><button class="btn ghost" onclick="clearHistory()">Vider</button></div>
+  <div class="win">
+    <div class="titlebar">RECHERCHE<div class="dots"><i></i><i></i><i></i></div></div>
+    <div class="winbody"><input class="search" id="search" placeholder="Rechercher dans l'historique..." oninput="renderHistory()"></div>
+    <div class="c2"></div>
+  </div>
+  <div id="historyList" class="history"></div>
+</section>
+
+</main>
+</div>
+
+<div class="assistant" id="assistant">
+  <div class="bulle hidden" id="assistantBulle">Astuce : clique sur une icône du dock pour changer d'outil.</div>
+  <button class="assistant-btn" onclick="toggleAssistant()" aria-label="Astuces">?</button>
+</div>
+
+<script>
+const KEY='devhub_ai_lab_v3';
+let store=JSON.parse(localStorage.getItem(KEY)||'null')||{items:[],count:0};
+const $=id=>document.getElementById(id);
+let platform='web';
+
+function persist(){localStorage.setItem(KEY,JSON.stringify(store));updateStats();renderHistory()}
+function updateStats(){$('count').textContent=store.count||0;$('saved').textContent=store.items.length}
+function dockBtn(id){return document.querySelector('.dock button[data-go="'+id+'"]')}
+function go(id,btn){
+  document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));
+  $(id).classList.remove('hidden');
+  document.querySelectorAll('.dock button').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  renderHistory();
+}
+function copy(id){let v=$(id).textContent;if(navigator.clipboard)navigator.clipboard.writeText(v)}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function saveCurrent(type,title,out){
+  if(!out||/apparaîtra ici|en attente/i.test(out))return;
+  store.items.unshift({title:title||'Résultat',type,out,date:new Date().toLocaleString('fr-FR')});
+  store.items=store.items.slice(0,80);persist();
+}
+
+/* ---------- CODE & SNIPPETS ---------- */
+const codeHints={
+  web:'Ex : bouton animé, carte responsive, formulaire de contact, navbar sticky...',
+  python:'Ex : fonction de tri, lecture de fichier CSV, mini API Flask...',
+  roblox:'Ex : script de saut, détection de collision, ramassage d\'objet...',
+  discord:'Ex : bot qui répond à une commande, gestion de rôle, événement de message...',
+  node:'Ex : serveur Express, appel API fetch, script de fichiers...'
+};
+function setPlatform(p,btn){
+  platform=p;
+  document.querySelectorAll('#codeTabs button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  $('codeHint').textContent=codeHints[p];
+}
+function genCode(){
+  let p=$('codePrompt').value.trim().toLowerCase()||'';
+  let o='';
+  if(platform==='web'){
+    if(/bouton|button/.test(p))o=`<button class="dh-button">Mon bouton</button>\n\n.dh-button{\n  padding:12px 20px;\n  border:0;\n  border-radius:10px;\n  background:#ff8fc9;\n  color:#160a1c;\n  font-weight:700;\n  cursor:pointer;\n  transition:.2s ease;\n}\n.dh-button:hover{transform:translateY(-2px);filter:brightness(1.1);}`;
+    else if(/carte|card/.test(p))o=`<div class="dh-card">\n  <h3>Titre</h3>\n  <p>Description courte de la carte.</p>\n</div>\n\n.dh-card{\n  background:#12183366;\n  border:1px solid #2c355c;\n  border-radius:14px;\n  padding:18px;\n  max-width:320px;\n}`;
+    else if(/formulaire|contact|form/.test(p))o=`<form class="dh-form">\n  <input type="text" placeholder="Nom" required>\n  <input type="email" placeholder="Email" required>\n  <textarea placeholder="Message" required></textarea>\n  <button type="submit">Envoyer</button>\n</form>\n\n.dh-form{display:flex;flex-direction:column;gap:10px;max-width:360px}\n.dh-form input,.dh-form textarea{padding:10px;border-radius:8px;border:1px solid #2c355c;background:#0d1226;color:#fff}`;
+    else if(/navbar|menu/.test(p))o=`<nav class="dh-nav">\n  <span class="logo">MonSite</span>\n  <a href="#">Accueil</a>\n  <a href="#">À propos</a>\n  <a href="#">Contact</a>\n</nav>\n\n.dh-nav{position:sticky;top:0;display:flex;align-items:center;gap:20px;padding:14px 24px;background:#0a0d1acc;backdrop-filter:blur(6px)}\n.dh-nav a{color:#eef1fb;text-decoration:none}`;
+    else o=`<!-- DevHub AI Lab — Code Generator -->\n<!-- Demande : ${esc(p)||'non précisée'} -->\n<div class="dh-block">\n  <p>Élément généré pour : ${esc(p)||'ta demande'}</p>\n</div>`;
+  } else if(platform==='python'){
+    if(/tri|sort/.test(p))o=`def tri_rapide(liste):\n    if len(liste) <= 1:\n        return liste\n    pivot = liste[len(liste)//2]\n    gauche = [x for x in liste if x < pivot]\n    milieu = [x for x in liste if x == pivot]\n    droite = [x for x in liste if x > pivot]\n    return tri_rapide(gauche) + milieu + tri_rapide(droite)`;
+    else if(/csv|fichier/.test(p))o=`import csv\n\nwith open('donnees.csv', newline='', encoding='utf-8') as f:\n    lecteur = csv.DictReader(f)\n    for ligne in lecteur:\n        print(ligne)`;
+    else if(/flask|api/.test(p))o=`from flask import Flask, jsonify\n\napp = Flask(__name__)\n\n@app.route('/api/status')\ndef status():\n    return jsonify({'ok': True})\n\nif __name__ == '__main__':\n    app.run(debug=True)`;
+    else o=`# DevHub AI Lab — Code Generator\n# Demande : ${p||'non précisée'}\n\ndef main():\n    print("Généré avec DevHub AI Lab")\n\nif __name__ == "__main__":\n    main()`;
+  } else if(platform==='roblox'){
+    if(/saut|jump/.test(p))o=`local UIS = game:GetService("UserInputService")\nlocal player = game.Players.LocalPlayer\n\nUIS.InputBegan:Connect(function(input)\n    if input.KeyCode == Enum.KeyCode.Space then\n        local hum = player.Character:FindFirstChild("Humanoid")\n        if hum then hum.Jump = true end\n    end\nend)`;
+    else if(/collision|touch/.test(p))o=`local part = script.Parent\n\npart.Touched:Connect(function(hit)\n    local hum = hit.Parent:FindFirstChild("Humanoid")\n    if hum then\n        print(hit.Parent.Name .. " a touché la partie")\n    end\nend)`;
+    else o=`local Players = game:GetService("Players")\n\nPlayers.PlayerAdded:Connect(function(player)\n    print(player.Name .. " vient de rejoindre !")\nend)\n\n-- Demande : ${p||'non précisée'}`;
+  } else if(platform==='discord'){
+    if(/commande|command/.test(p))o=`const { Client, GatewayIntentBits } = require('discord.js');\nconst client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });\n\nclient.on('messageCreate', msg => {\n  if (msg.content === '!ping') msg.reply('Pong !');\n});\n\nclient.login(process.env.TOKEN);`;
+    else if(/rôle|role/.test(p))o=`client.on('messageCreate', async msg => {\n  if (msg.content === '!role') {\n    const role = msg.guild.roles.cache.find(r => r.name === 'Membre');\n    if (role) await msg.member.roles.add(role);\n    msg.reply('Rôle attribué !');\n  }\n});`;
+    else o=`const { Client, GatewayIntentBits } = require('discord.js');\n\nconst client = new Client({ intents: [GatewayIntentBits.Guilds] });\n\nclient.once('ready', () => {\n  console.log('Connecté : ' + client.user.tag);\n});\n\nclient.login(process.env.TOKEN);\n// Demande : ${p||'non précisée'}`;
+  } else {
+    if(/serveur|express|server/.test(p))o=`const express = require('express');\nconst app = express();\n\napp.get('/', (req, res) => res.send('Hello DevHub'));\n\napp.listen(3000, () => console.log('Serveur sur le port 3000'));`;
+    else if(/fetch|api/.test(p))o=`async function chargerDonnees(url) {\n  const res = await fetch(url);\n  if (!res.ok) throw new Error('Erreur réseau');\n  return res.json();\n}`;
+    else o=`// DevHub AI Lab — Code Generator\n// Demande : ${p||'non précisée'}\n\nfunction main() {\n  console.log("Hello depuis DevHub");\n}\n\nmain();`;
+  }
+  $('codeOut').textContent=o;store.count++;persist();
+}
+
+/* ---------- COMMANDES ---------- */
+function genCmd(){
+  let p=$('cmdPrompt').value.trim().toLowerCase();
+  let o='';
+  if(/git.*init|initialise.*d[ée]p[ôo]t/.test(p))o=`git init\ngit add .\ngit commit -m "premier commit"`;
+  else if(/clone/.test(p))o=`git clone <url-du-depot>\ncd <nom-du-projet>`;
+  else if(/installe.*d[ée]pendance|npm install/.test(p))o=`npm install`;
+  else if(/lance.*serveur.*python|serveur python/.test(p))o=`python -m http.server 8000`;
+  else if(/lance.*node|d[ée]marre.*serveur/.test(p))o=`npm run dev`;
+  else if(/docker.*build|conteneur/.test(p))o=`docker build -t mon-app .\ndocker run -p 3000:3000 mon-app`;
+  else if(/environnement virtuel|venv/.test(p))o=`python -m venv venv\nsource venv/bin/activate   # macOS/Linux\nvenv\\Scripts\\activate      # Windows`;
+  else if(/build|production/.test(p))o=`npm run build`;
+  else if(/branche|branch/.test(p))o=`git checkout -b nom-de-la-branche`;
+  else o=`# Commande générique pour : "${p||'ta demande'}"\nnpm install\nnpm run dev`;
+  $('cmdOut').textContent=o;store.count++;persist();
+}
+
+/* ---------- PROJET ---------- */
+const projHints={site:'Ex : portfolio, vitrine d\'artisan, landing page...',webapp:'Ex : dashboard, outil interne, app à comptes utilisateurs...',discordbot:'Ex : bot de modération, bot de musique...',pyscript:'Ex : script d\'automatisation, outil CLI...',robloxgame:'Ex : jeu d\'obstacle, simulateur, RPG...'};
+function hintProj(){$('projHint').textContent=projHints[$('projType').value]}
+function genProject(){
+  let name=$('projName').value.trim()||'mon-projet';
+  let t=$('projType').value,o='';
+  if(t==='site')o=`${name}/\n├── index.html\n├── README.md\n├── .gitignore\n├── css/\n│   └── style.css\n├── js/\n│   └── script.js\n└── assets/\n    ├── images/\n    └── icons/`;
+  else if(t==='webapp')o=`${name}/\n├── README.md\n├── package.json\n├── .gitignore\n├── .env.example\n├── public/\n├── src/\n│   ├── components/\n│   ├── pages/\n│   ├── styles/\n│   └── utils/\n└── tests/`;
+  else if(t==='discordbot')o=`${name}/\n├── README.md\n├── package.json\n├── .env\n├── index.js\n├── commands/\n│   └── ping.js\n├── events/\n│   └── ready.js\n└── utils/`;
+  else if(t==='pyscript')o=`${name}/\n├── README.md\n├── requirements.txt\n├── main.py\n├── src/\n│   └── __init__.py\n└── tests/\n    └── test_main.py`;
+  else o=`${name}/\n├── README.md\n├── default.project.json\n├── src/\n│   ├── ServerScriptService/\n│   ├── StarterPlayerScripts/\n│   └── ReplicatedStorage/\n└── assets/`;
+  $('projOut').textContent=o;store.count++;persist();
+}
+
+/* ---------- README ---------- */
+function genReadme(){
+  let name=$('rmName').value.trim()||'Mon Projet';
+  let desc=$('rmDesc').value.trim()||'Décris ton projet en une phrase.';
+  let tech=($('rmTech').value.trim()||'HTML, CSS, JavaScript').split(',').map(s=>s.trim()).filter(Boolean);
+  let fence=String.fromCharCode(96,96,96);
+  let lines=[
+    '# '+name,'',desc,'',
+    '## Fonctionnalités','- Interface claire','- Configuration simple','- Architecture organisée','',
+    '## Installation',fence+'bash','npm install','npm start',fence,'',
+    '## Technologies',...tech.map(t=>'- '+t),'',
+    '## Licence','Projet personnel / DevHub'
+  ];
+  $('rmOut').textContent=lines.join('\n');
+  store.count++;persist();
+}
+
+/* ---------- CONFIG ---------- */
+const gitignores={
+  node:`node_modules/\n.env\n.env.local\ndist/\nbuild/\ncoverage/\n*.log\n.DS_Store\n.vscode/\n.idea/`,
+  python:`__pycache__/\n*.pyc\n.venv/\nvenv/\n.env\n.pytest_cache/\n*.egg-info/\ndist/\nbuild/\n.DS_Store`,
+  unity:`Library/\nTemp/\nObj/\nBuild/\nBuilds/\n*.csproj\n*.sln\n.vs/\n.DS_Store`,
+  general:`*.log\n.DS_Store\n.env\nnode_modules/\ndist/\nbuild/\n.idea/\n.vscode/`
+};
+function genGitignore(){$('giOut').textContent=gitignores[$('giStack').value]}
+function genEnv(){
+  let name=$('envName').value.trim()||'MonApp';
+  let vars=($('envVars').value.trim()||'PORT, DATABASE_URL, TOKEN').split(',').map(s=>s.trim().toUpperCase()).filter(Boolean);
+  $('envOut').textContent=`# Configuration ${name}\n${vars.map(v=>v+'=').join('\n')}`;
+}
+
+/* ---------- UI / PALETTES ---------- */
+function hexRgb(h){return h.match(/\w\w/g).map(x=>parseInt(x,16))}
+function makeUI(){
+  let h=$('base').value,r=$('radius').value,style=$('style').value;
+  let [r1,g,b]=hexRgb(h);
+  let dark=`rgb(${Math.max(0,r1-55)},${Math.max(0,g-55)},${Math.max(0,b-45)})`;
+  let styles={
+    dark:{bg:'#0a0d1a',surface:'#121833',text:'#f4f6fb',muted:'#8b93b8'},
+    pastel:{bg:'#fff3fa',surface:'#ffffff',text:'#2c2436',muted:'#8d7f9c'},
+    neon:{bg:'#050510',surface:'#0f0f22',text:'#eafcff',muted:'#7d8fae'},
+    mini:{bg:'#fafafa',surface:'#ffffff',text:'#1a1a1a',muted:'#767676'}
+  };
+  let s=styles[style];
+  let css=`:root{\n  --primary:${h};\n  --primary-dark:${dark};\n  --background:${s.bg};\n  --surface:${s.surface};\n  --text:${s.text};\n  --muted:${s.muted};\n  --radius:${r};\n  --transition:.2s ease;\n}`;
+  $('uiOut').textContent=css;
+  let cols=[h,dark,s.bg,s.surface,s.text];
+  $('palette').innerHTML=cols.map(c=>`<div class="swatch" style="background:${c}">${c}</div>`).join('');
+  store.count++;persist();
+}
+
+/* ---------- JSON LAB ---------- */
+function jsonFormat(){try{$('jsonOut').textContent=JSON.stringify(JSON.parse($('jsonIn').value),null,2)}catch(e){$('jsonOut').textContent='JSON invalide : '+e.message}}
+function jsonMini(){try{$('jsonOut').textContent=JSON.stringify(JSON.parse($('jsonIn').value))}catch(e){$('jsonOut').textContent='JSON invalide : '+e.message}}
+function jsonValidate(){try{JSON.parse($('jsonIn').value);$('jsonOut').innerHTML='<span class="success">✓ JSON valide</span>'}catch(e){$('jsonOut').innerHTML='<span class="bad">✕ JSON invalide</span><br><br>'+esc(e.message)}}
+
+/* ---------- SIMULATEUR DE BUGS ---------- */
+const bugMessages={
+  js:["Uncaught TypeError: undefined n'est pas une fonction","ReferenceError: maVariable n'est pas définie","SyntaxError: virgule inattendue à la ligne 42","RangeError: pile d'appels dépassée"],
+  python:["Traceback (most recent call last):\n  File \"main.py\", line 12\nIndentationError: attendu un bloc indenté","TypeError: NoneType n'a pas d'attribut \"valeur\"","ModuleNotFoundError: aucun module nommé \"chance\""],
+  lua:["attempt to index a nil value (le stagiaire)","stack overflow (encore)","ServerScriptService.Script:7: attendu 'end'"],
+  css:["Le flexbox a décidé de vivre sa vie","z-index: 9999999 ne suffisait toujours pas","La marge a mystérieusement doublé sur mobile"],
+  git:["CONFLICT (contenu) : conflit de fusion dans app.js","fatal: refusé de fusionner des historiques non liés","error: vos modifications locales seraient écrasées"]
+};
+const bugExcuses=["« Ça marchait sur ma machine. »","« C'est le cache, sûrement. »","« Mercure est rétrograde. »","« Le stagiaire a touché à rien, promis. »","« C'est pas un bug, c'est une fonctionnalité cachée. »","« Redémarre, ça va passer. »","« Le CDN doit être down. »"];
+function genBug(){
+  let l=$('bugLang').value;
+  let msgs=bugMessages[l];
+  let msg=msgs[Math.floor(Math.random()*msgs.length)];
+  let excuse=bugExcuses[Math.floor(Math.random()*bugExcuses.length)];
+  $('bugOut').textContent=`[SIMULATION — non réel]\n${msg}\n\nExcuse de stand-up suggérée :\n${excuse}`;
+  store.count++;persist();
+}
+
+/* ---------- TEST DATA ---------- */
+function testData(){
+  let format=$('tFormat').value;
+  let users=[{id:1,name:'Alex',email:'alex@example.com',active:true},{id:2,name:'Nova',email:'nova@example.com',active:false},{id:3,name:'Kim',email:'kim@example.com',active:true}];
+  if(format==='csv'){
+    let rows=['id,name,email,active',...users.map(u=>`${u.id},${u.name},${u.email},${u.active}`)];
+    $('testOut').textContent=rows.join('\n');
+    store.count++;persist();return;
+  }
+  let o={};
+  if($('tUser').checked)o.users=users;
+  if($('tProducts').checked)o.products=[{id:101,name:'Starter Pack',price:5},{id:102,name:'Premium Pack',price:15}];
+  if($('tOrders').checked)o.orders=[{id:5001,userId:1,total:20,status:'paid'},{id:5002,userId:2,total:10,status:'pending'}];
+  if($('tStats').checked)o.stats={users:1248,projects:384,completionRate:87};
+  $('testOut').textContent=JSON.stringify(o,null,2);
+  store.count++;persist();
+}
+
+/* ---------- HISTORIQUE ---------- */
+function renderHistory(){
+  let box=$('historyList');if(!box)return;
+  let q=($('search')?.value||'').toLowerCase();
+  let a=store.items.filter(x=>(x.title+x.type+x.out).toLowerCase().includes(q));
+  box.innerHTML=a.length?a.map(x=>{
+    let i=store.items.indexOf(x);
+    return `<div class="win item"><div><strong>${esc(x.title)}</strong><div class="muted">${esc(x.type)} · ${esc(x.date)}</div></div><button class="btn ghost" onclick="openHistory(${i})">Ouvrir</button><div class="c2"></div></div>`;
+  }).join(''):"<div class=\"notice\">Aucune sauvegarde pour l'instant.</div>";
+}
+function openHistory(i){
+  let x=store.items[i];
+  const map={code:'code',cmd:'cmd',project:'project',readme:'readme'};
+  let sec=map[x.type]||'history';
+  go(sec,dockBtn(sec));
+  if(x.type==='code'){$('codePrompt').value=x.title;$('codeOut').textContent=x.out}
+  else if(x.type==='cmd'){$('cmdPrompt').value=x.title;$('cmdOut').textContent=x.out}
+  else if(x.type==='project'){$('projName').value=x.title;$('projOut').textContent=x.out}
+  else if(x.type==='readme'){$('rmName').value=x.title;$('rmOut').textContent=x.out}
+}
+function clearHistory(){store.items=[];persist()}
+
+/* ---------- ASSISTANT + HORLOGE ---------- */
+function toggleAssistant(){$('assistantBulle').classList.toggle('hidden')}
+const mascotteLines=["« Prêt à générer un truc cool ? »","« N'oublie pas de sauvegarder tes résultats. »","« Le simulateur de bugs, c'est pour de faux, promis. »","« Ton historique reste sur cet appareil. »"];
+function tickClock(){
+  let d=new Date();
+  let pad=n=>String(n).padStart(2,'0');
+  $('clock').textContent=`${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+/* ---------- INIT ---------- */
+updateStats();renderHistory();setPlatform('web',document.querySelector('#codeTabs button'));hintProj();genGitignore();
+$('mascotteLine').textContent=mascotteLines[Math.floor(Math.random()*mascotteLines.length)];
+tickClock();setInterval(tickClock,1000);
+</script>
+</body>
+</html>
